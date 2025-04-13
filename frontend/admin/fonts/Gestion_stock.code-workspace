@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "D:/big tenor/cours_java/Project/JAVA2/Java 2/Java 2/Gestion_Stocks/stock"
+		},
+		{
+			"path": "D:/big tenor/cours_java/Project/JAVA2/Java 2/Java 2/Gestion_Stocks"
+		}
+	],
+	"settings": {
+		"files.autoSave": "afterDelay",
+		"tailwind-fold.autoFold": false,
+		"tailwindcss.enabled": false,
+		"tailwindcss.fallbackDefaultConfig": false
+	}
+}
