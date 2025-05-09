@@ -1,0 +1,38 @@
+/* Styles personnalisés pour le carrousel de témoignages */
+.testimonials-swiper {
+  padding: 20px 0 40px;
+}
+
+.testimonials-swiper .swiper-pagination {
+  bottom: 0;
+}
+
+.testimonials-swiper .swiper-pagination-bullet {
+  background-color: #d97706;
+  opacity: 0.5;
+  width: 10px;
+  height: 10px;
+}
+
+.testimonials-swiper .swiper-pagination-bullet-active {
+  opacity: 1;
+}
+
+.testimonials-swiper .swiper-button-next,
+.testimonials-swiper .swiper-button-prev {
+  color: #d97706;
+}
+
+.testimonials-swiper .swiper-button-next:hover,
+.testimonials-swiper .swiper-button-prev:hover {
+  color: #b45309;
+}
+
+/* Animation de survol pour les cartes de témoignages */
+.testimonials-swiper .swiper-slide {
+  height: auto;
+}
+
+.testimonials-swiper .swiper-slide-active {
+  z-index: 1;
+}

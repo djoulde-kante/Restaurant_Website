@@ -1,0 +1,26 @@
+@import '@repo/styles/globals.css';
+
+@layer base {
+  :root {
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-serif: 'Playfair Display', serif;
+  }
+
+  html {
+    font-family: var(--font-sans);
+  }
+}
+
+/* Styles personnalisés pour Swiper */
+.gallery-swiper {
+  padding: 20px 0;
+}
+
+.gallery-swiper .swiper-pagination-bullet {
+  background: #d97706; /* amber-600 */
+}
+
+.gallery-swiper .swiper-button-next,
+.gallery-swiper .swiper-button-prev {
+  color: #d97706;
+}

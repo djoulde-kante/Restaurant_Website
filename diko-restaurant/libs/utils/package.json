@@ -1,0 +1,13 @@
+{
+  "name": "@repo/utils",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./src/index.js",
+  "scripts": {
+    "lint": "eslint ."
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "eslint": "^8.57.0"
+  }
+}

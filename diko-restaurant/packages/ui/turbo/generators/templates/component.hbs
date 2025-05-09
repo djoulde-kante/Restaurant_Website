@@ -1,8 +1,7 @@
-export const {{ pascalCase name }} = ({ children }: { children: React.ReactNode }) => {
+export function {{ pascalCase name }}({ children, className = '' }) {
   return (
-    <div>
-      <h1>{{ pascalCase name }} Component</h1>
+    <div className={className}>
       {children}
     </div>
   );
-};
+}
