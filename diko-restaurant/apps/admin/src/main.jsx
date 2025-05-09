@@ -1,6 +1,5 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
 import { AppStateProvider, AuthProvider } from '@repo/utils'
 import { NotificationProvider } from '@repo/ui'
 import './index.css'
@@ -11,9 +10,7 @@ createRoot(document.getElementById('root')).render(
     <AuthProvider>
       <AppStateProvider>
         <NotificationProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
+          <App />
         </NotificationProvider>
       </AppStateProvider>
     </AuthProvider>

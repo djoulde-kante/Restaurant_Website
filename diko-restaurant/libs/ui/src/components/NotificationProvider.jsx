@@ -1,6 +1,6 @@
 import React, { createContext, useContext } from 'react';
 import { useNotification } from '@repo/utils';
-import { Toast } from './Toast';
+import Toast from './Toast';
 
 const NotificationContext = createContext();
 

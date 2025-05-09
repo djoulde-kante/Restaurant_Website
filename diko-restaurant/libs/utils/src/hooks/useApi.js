@@ -1,8 +1,8 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useAuthContext } from './AuthProvider';
 import { useNotificationContext } from '@repo/ui';
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 export const useApi = () => {
   const { getAuthToken } = useAuthContext();
@@ -24,7 +24,14 @@ export const useApi = () => {
         headers,
       });
 
-      const data = await response.json();
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(`Réponse invalide du serveur: ${text.substring(0, 100)}...`);
+      }
 
       if (!response.ok) {
         throw new Error(data.message || 'Une erreur est survenue');
@@ -69,5 +76,81 @@ export const useApi = () => {
     post,
     put,
     delete: del
+  };
+};
+
+export const useCrud = (endpoints) => {
+  const api = useApi();
+  const [items, setItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchAll = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await endpoints.getAll();
+      setItems(data);
+      return data;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [endpoints]);
+
+  const create = useCallback(async (data) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const result = await endpoints.create(data);
+      setItems(prev => [...prev, result]);
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [endpoints]);
+
+  const update = useCallback(async (id, data) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const result = await endpoints.update(id, data);
+      setItems(prev => prev.map(item => item._id === id ? result : item));
+      return result;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [endpoints]);
+
+  const remove = useCallback(async (id) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await endpoints.delete(id);
+      setItems(prev => prev.filter(item => item._id !== id));
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [endpoints]);
+
+  return {
+    items,
+    isLoading,
+    error,
+    fetchAll,
+    create,
+    update,
+    remove
   };
 };

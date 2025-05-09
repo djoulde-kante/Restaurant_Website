@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { Button, ImageUpload } from '@repo/ui';
 import { useFormValidation, schemas, useFileUpload } from '@repo/utils';
 
@@ -8,7 +9,8 @@ const MenuItemForm = ({ item = {}, onSubmit, onCancel }) => {
     errors,
     handleChange,
     validateForm,
-    setData
+    setData,
+    setErrors
   } = useFormValidation({
     name: item.name || '',
     description: item.description || '',
@@ -23,12 +25,19 @@ const MenuItemForm = ({ item = {}, onSubmit, onCancel }) => {
   const handleImageUpload = async (file) => {
     try {
       const result = await uploadFile(file);
+      if (!result?.url) {
+        throw new Error('URL de l\'image non reçue');
+      }
       setData(prev => ({
         ...prev,
         image: result.url
       }));
     } catch (err) {
       console.error('Erreur upload:', err);
+      setErrors(prev => ({
+        ...prev,
+        image: 'Erreur lors du téléchargement de l\'image'
+      }));
     }
   };
 
@@ -187,6 +196,24 @@ const MenuItemForm = ({ item = {}, onSubmit, onCancel }) => {
       </div>
     </form>
   );
+};
+
+MenuItemForm.propTypes = {
+  item: PropTypes.shape({
+    name: PropTypes.string,
+    description: PropTypes.string,
+    price: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    category: PropTypes.string,
+    isAvailable: PropTypes.bool,
+    image: PropTypes.string
+  }),
+  onSubmit: PropTypes.func.isRequired,
+  onCancel: PropTypes.func
+};
+
+MenuItemForm.defaultProps = {
+  item: {},
+  onCancel: null
 };
 
 export default MenuItemForm;

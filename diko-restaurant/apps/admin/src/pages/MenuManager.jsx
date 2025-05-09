@@ -1,55 +1,125 @@
-import React, { useState, useEffect } from 'react';
-import { Button, Card, Modal, Toast } from '@repo/ui/components';
-import { formatPrice } from '@repo/utils';
-import { useCrud } from '@repo/utils/hooks/useApi';
-import { getMenu, createMenuItem, updateMenuItem, deleteMenuItem } from '@repo/utils';
+import React, { useState, useEffect, useMemo, memo } from 'react';
+import { Button, Card, Modal, Toast, ErrorBoundary } from '@repo/ui';
+import { formatPrice, useLogger } from '@repo/utils';
+import { useMenuApi } from '@repo/utils';
 import { useToast } from '../hooks/useToast';
 import MenuItemForm from '../components/MenuItemForm';
 
-const menuEndpoints = {
-  getAll: getMenu,
-  create: createMenuItem,
-  update: updateMenuItem,
-  delete: deleteMenuItem,
-};
+const MenuItem = memo(({ item, onEdit, onDelete }) => {
+  return (
+    <div className="border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex justify-between items-start">
+        <div>
+          <h3 className="text-lg font-semibold">{item.name}</h3>
+          <p className="text-gray-600 text-sm mt-1">{item.description}</p>
+          <p className="text-restaurant font-medium mt-2">{formatPrice(item.price)}</p>
+        </div>
+        <div className="space-x-2">
+          <Button variant="secondary" size="sm" onClick={() => onEdit(item)}>
+            Modifier
+          </Button>
+          <Button variant="danger" size="sm" onClick={() => onDelete(item)}>
+            Supprimer
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+});
 
-const MenuManager = () => {
-  const { items: menuItems, isLoading, error, fetchAll, create, update, remove } = useCrud(menuEndpoints);
+MenuItem.displayName = 'MenuItem';
+
+const MenuManagerContent = () => {
+  const { getMenu, createMenuItem, updateMenuItem, deleteMenuItem } = useMenuApi();
+  const [items, setItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const { toast, showToast, hideToast } = useToast();
+  const { logError, logInfo } = useLogger();
 
-  useEffect(() => {
-    fetchAll().catch(err => {
+  const fetchItems = async () => {
+    try {
+      setIsLoading(true);
+      const data = await getMenu();
+      setItems(data);
+    } catch (err) {
+      logError('Erreur lors du chargement du menu', err);
+      setError(err);
       showToast({
         message: 'Erreur lors du chargement du menu',
         type: 'error'
       });
-    });
-  }, [fetchAll, showToast]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  const menuItemsByCategory = useMemo(() => {
+    if (!Array.isArray(items)) return {};
+    
+    return items.reduce((acc, item) => {
+      const category = item.category || 'autre';
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(item);
+      return acc;
+    }, {});
+  }, [items]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-restaurant"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+        <p className="text-red-600">{error.message || 'Une erreur est survenue'}</p>
+        <Button onClick={fetchItems} className="mt-4">Réessayer</Button>
+      </div>
+    );
+  }
 
   const handleSubmit = async (formData) => {
     try {
+      setIsLoading(true);
       if (selectedItem) {
-        await update(selectedItem._id, formData);
+        const updated = await updateMenuItem(selectedItem._id, formData);
+        setItems(prev => prev.map(item => item._id === selectedItem._id ? updated : item));
+        logInfo('Plat mis à jour', { itemId: selectedItem._id, ...formData });
         showToast({
           message: 'Plat mis à jour avec succès',
           type: 'success'
         });
       } else {
-        await create(formData);
+        const created = await createMenuItem(formData);
+        setItems(prev => [...prev, created]);
+        logInfo('Nouveau plat créé', { itemId: created._id, ...formData });
         showToast({
-          message: 'Nouveau plat ajouté avec succès',
+          message: 'Plat ajouté avec succès',
           type: 'success'
         });
       }
       setIsModalOpen(false);
       setSelectedItem(null);
     } catch (err) {
+      logError('Erreur lors de la sauvegarde du plat', err, { formData });
       showToast({
         message: 'Erreur lors de la sauvegarde',
         type: 'error'
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -61,12 +131,14 @@ const MenuManager = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Êtes-vous sûr de vouloir supprimer cet élément ?')) return;
     try {
-      await remove(id);
+      await deleteMenuItem(id);
+      setItems(prev => prev.filter(item => item._id !== id));
       showToast({
         message: 'Plat supprimé avec succès',
         type: 'success'
       });
     } catch (err) {
+      logError('Erreur lors de la suppression du plat', err, { itemId: id });
       showToast({
         message: 'Erreur lors de la suppression',
         type: 'error'
@@ -74,13 +146,10 @@ const MenuManager = () => {
     }
   };
 
-  if (isLoading) return <div className="text-center p-8">Chargement...</div>;
-  if (error) return <div className="text-red-500 p-8">{error}</div>;
-
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="heading-2">Gestion du Menu</h1>
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Gestion du Menu</h1>
         <Button onClick={() => {
           setSelectedItem(null);
           setIsModalOpen(true);
@@ -89,49 +158,21 @@ const MenuManager = () => {
         </Button>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {menuItems.map((item) => (
-          <Card key={item._id} className="relative">
-            {item.image && (
-              <img
-                src={item.image}
-                alt={item.name}
-                className="w-full h-48 object-cover"
+      {Object.entries(menuItemsByCategory).map(([category, items]) => (
+        <div key={category} className="mb-8">
+          <h2 className="text-xl font-semibold capitalize mb-4">{category}</h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {items.map(item => (
+              <MenuItem
+                key={item._id}
+                item={item}
+                onEdit={() => handleEdit(item)}
+                onDelete={() => handleDelete(item._id)}
               />
-            )}
-            <div className="p-4">
-              <h3 className="font-semibold text-lg mb-2">{item.name}</h3>
-              <p className="text-gray-600 mb-2">{item.description}</p>
-              <div className="flex justify-between items-center">
-                <span className="text-restaurant font-semibold">
-                  {formatPrice(item.price)}
-                </span>
-                <span className={`px-2 py-1 rounded-full text-sm ${
-                  item.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
-                  {item.isAvailable ? 'Disponible' : 'Indisponible'}
-                </span>
-              </div>
-              <div className="mt-4 flex gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => handleEdit(item)}
-                >
-                  Modifier
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDelete(item._id)}
-                >
-                  Supprimer
-                </Button>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+            ))}
+          </div>
+        </div>
+      ))}
 
       <Modal 
         isOpen={isModalOpen}
@@ -162,5 +203,11 @@ const MenuManager = () => {
     </div>
   );
 };
+
+const MenuManager = () => (
+  <ErrorBoundary>
+    <MenuManagerContent />
+  </ErrorBoundary>
+);
 
 export default MenuManager;
