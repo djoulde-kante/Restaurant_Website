@@ -6,7 +6,10 @@
   "scripts": {
     "lint": "eslint ."
   },
-  "dependencies": {},
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4",
+    "zustand": "^5.0.4"
+  },
   "devDependencies": {
     "eslint": "^8.57.0"
   }

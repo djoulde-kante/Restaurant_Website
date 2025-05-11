@@ -9,7 +9,7 @@ import { menuRouter } from './routes/menu.js';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3009;
 
 // Middleware
 app.use(cors());
@@ -18,6 +18,7 @@ app.use(express.json());
 // Routes
 app.use('/api/reservations', reservationRouter);
 app.use('/api/upload', uploadRouter);
+app.use('/api/menu', menuRouter);
 
 // MongoDB connection
 mongoose.connect('mongodb://localhost:27017/restaurant')

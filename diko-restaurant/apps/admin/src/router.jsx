@@ -1,43 +1,86 @@
-import { createBrowserRouter } from 'react-router-dom';
-import Layout from './components/Layout';
-import MenuManager from './pages/MenuManager';
+import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { AdminLayout } from '@repo/ui'
+import { useAuth } from '@repo/utils'
+
+// Pages
+import Dashboard from './pages/Dashboard'
+import Menu from './pages/Menu'
+import Orders from './pages/Orders'
+import Employees from './pages/Employees'
+import Profile from './pages/Profile'
+import Settings from './pages/Settings'
+import Login from './pages/Login'
+import Register from './pages/Register'
+
+// Protected Route Component
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth()
+  
+  if (loading) return <div>Loading...</div>
+  if (!user) return <Navigate to="/login" replace />
+  
+  return children
+}
+
+// Auth Route Component
+function AuthRoute({ children }) {
+  const { user, loading } = useAuth()
+  
+  if (loading) return <div>Loading...</div>
+  if (user) return <Navigate to="/" replace />
+  
+  return children
+}
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <Layout />,
+    element: (
+      <ProtectedRoute>
+        <AdminLayout />
+      </ProtectedRoute>
+    ),
     children: [
       {
         index: true,
-        element: <MenuManager />
+        element: <Dashboard />,
       },
       {
         path: 'menu',
-        element: <MenuManager />
+        element: <Menu />,
       },
       {
-        path: 'reservations',
-        element: (
-          <div className="p-8">
-            <h1 className="heading-2">Gestion des réservations</h1>
-            <p className="paragraph mt-4">Fonctionnalité à venir...</p>
-          </div>
-        )
+        path: 'orders',
+        element: <Orders />,
+      },
+      {
+        path: 'employees',
+        element: <Employees />,
+      },
+      {
+        path: 'profile',
+        element: <Profile />,
       },
       {
         path: 'settings',
-        element: (
-          <div className="p-8">
-            <h1 className="heading-2">Paramètres</h1>
-            <p className="paragraph mt-4">Fonctionnalité à venir...</p>
-          </div>
-        )
-      }
-    ]
-  }
-], {
-  future: {
-    v7_startTransition: true,
-    v7_relativeSplatPath: true
-  }
-});
+        element: <Settings />,
+      },
+    ],
+  },
+  {
+    path: '/login',
+    element: (
+      <AuthRoute>
+        <Login />
+      </AuthRoute>
+    ),
+  },
+  {
+    path: '/register',
+    element: (
+      <AuthRoute>
+        <Register />
+      </AuthRoute>
+    ),
+  },
+])
